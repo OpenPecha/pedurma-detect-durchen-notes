@@ -10,3 +10,6 @@ NOTE_CLASSIFIER_TRAINING_DATA = TRAINING_DATA_PATH / "note_classifier"
 NOTE_CLASSIFIER_TRAINING_DATA.mkdir(parents=True, exist_ok=True)
 NOTE_DETECTION_TRAINING_DATA = TRAINING_DATA_PATH / "note_detection"
 NOTE_DETECTION_TRAINING_DATA.mkdir(parents=True, exist_ok=True)
+
+# Models
+NOTE_CLASSIFIER_MODEL_PATH = Path(__file__).parent / "models" / "note_classifier" / "note_classifier.keras"
