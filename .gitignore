@@ -162,3 +162,4 @@ cython_debug/
 *.jpg
 *.png
 .DS_Store
+traindata/*
