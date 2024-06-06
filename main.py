@@ -98,7 +98,7 @@ def transform_volume(vol_path, output_dir):
     for image_fn in (pbar := tqdm(list(images_path.iterdir()))):
         if not image_fn.name.endswith(".jpg"):
             continue
-        pbar.set_description(vol_path.name)
+        pbar.set_description("- " + vol_path.name)
         output_fn = output_dir / image_fn.name
         if output_fn.is_file():
             continue
@@ -106,7 +106,8 @@ def transform_volume(vol_path, output_dir):
 
 
 def run_transform():
-    for vol_path in tqdm(list(config.INPUT_PATH.iterdir())):
+    for vol_path in (pbar := tqdm(list(config.INPUT_PATH.iterdir()))):
+        pbar.set_description("Transform Progress")
         output_dir = config.IMAGES_OUTPUT_PATH / vol_path.name
         output_dir.mkdir(parents=True, exist_ok=True)
         transform_volume(vol_path, output_dir)
@@ -138,7 +139,7 @@ def ocr_volume(vol_path, output_dir):
     for image_fn in (pbar := tqdm(list(vol_path.iterdir()))):
         if not image_fn.name.endswith(".jpg"):
             continue
-        pbar.set_description(vol_path.name)
+        pbar.set_description("- " + vol_path.name)
         output_fn = output_dir / f"{image_fn.stem}.txt"
         if output_fn.is_file():
             continue
@@ -151,12 +152,15 @@ def ocr_volume(vol_path, output_dir):
 
 
 def run_ocr():
-    for vol_path in tqdm(list(config.IMAGES_OUTPUT_PATH.iterdir())):
+    for vol_path in (pbar := tqdm(list(config.IMAGES_OUTPUT_PATH.iterdir()))):
+        pbar.set_description("OCR Progress")
         output_dir = config.OCR_OUTPUT_PATH / vol_path.name
         output_dir.mkdir(parents=True, exist_ok=True)
         ocr_volume(vol_path, output_dir)
 
 
 if __name__ == "__main__":
+    print("Transforming images...")
     run_transform()
+    print("Running OCR...")
     run_ocr()
