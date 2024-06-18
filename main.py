@@ -1,5 +1,6 @@
 import io
 import json
+import sys
 from pathlib import Path
 
 import cv2
@@ -13,7 +14,7 @@ from tqdm import tqdm
 import config
 from models import double_tsek_detector, note_detector
 
-vision_client = vision.ImageAnnotatorClient()
+vision_client = None
 
 
 def remove_old_maker(image, position):
@@ -114,6 +115,9 @@ def run_transform():
 
 
 def google_ocr(image_fn, lang_hint=None):
+    global vision_client
+    if not vision_client:
+        vision_client = vision.ImageAnnotatorClient()
     with io.open(image_fn, "rb") as image_file:
         content = image_file.read()
     ocr_image = vision.Image(content=content)
@@ -165,7 +169,18 @@ def run_ocr():
 
 
 if __name__ == "__main__":
-    print("Transforming images...")
-    run_transform()
-    print("Running OCR...")
-    run_ocr()
+    try:
+        mode = sys.argv[1]
+    except IndexError:
+        print("No mode specified. Use 'transform' or 'ocr'")
+        sys.exit(1)
+
+    if mode == "transform":
+        print("Transforming images...")
+        run_transform()
+    elif mode == "ocr":
+        print("Running OCR...")
+        run_ocr()
+    else:
+        print("Invalid mode. Use 'transform' or 'ocr'")
+        sys.exit(1)
