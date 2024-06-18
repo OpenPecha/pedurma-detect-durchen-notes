@@ -16,7 +16,9 @@ def download_volume(vol_file_name, vol_file_id, output_dir):
 
 
 def unzip_volume(vol_name, output_dir):
-    subprocess.run(["unzip", f"{output_dir}/{vol_name}.zip", "-d", f"{output_dir}"])
+    subprocess.run(
+        ["unzip", "-qq", f"{output_dir}/{vol_name}.zip", "-d", f"{output_dir}"]
+    )
     subprocess.run(["rm", f"{output_dir}/{vol_name}.zip"])
 
 
