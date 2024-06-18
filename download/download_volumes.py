@@ -11,7 +11,12 @@ vol_ids = json.load(vol_ids_fn.open())
 
 def download_volume(vol_file_name, vol_file_id, output_dir):
     subprocess.run(
-        ["gdown", "--id", vol_file_id, "-O", f"{output_dir}/{vol_file_name}"]
+        [
+            "gdown",
+            f"https://drive.google.com/uc?id={vol_file_id}",
+            "-O",
+            f"{output_dir}/{vol_file_name}",
+        ]
     )
 
 
