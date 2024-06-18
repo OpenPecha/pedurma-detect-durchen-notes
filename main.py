@@ -30,9 +30,8 @@ def insert_text(image, text, position, font_size):
     x, y = position
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     pil_image = Image.fromarray(image)
-    font = ImageFont.truetype(
-        "/Library/Fonts/Supplemental/Arial Unicode.ttf", font_size
-    )
+    font_file = Path(__file__).parent / "data" / "fonts" / "Arial_Unicode.ttf"
+    font = ImageFont.truetype(str(font_file), font_size)
     draw = ImageDraw.Draw(pil_image)
     draw.text((x, y), text, font=font, fill=(65, 65, 65, 255))
     image = np.asarray(pil_image)
