@@ -37,9 +37,19 @@ MODELS_PATH = Path(__file__).parent / "models"
 
 ## Note Models
 NOTE_CLASSIFIER_MODEL_PATH = MODELS_PATH / "note_classifier" / "note_classifier.keras"
-NOTE_NUM_RECOGNIZER_MODEL_PATH = MODELS_PATH / "note_num_recognition" / "note_num_recognition.keras"
+NOTE_NUM_RECOGNIZER_MODEL_PATH = (
+    MODELS_PATH / "note_num_recognition" / "note_num_recognition.keras"
+)
 NOTE_DETECTION_MODEL_PATH = MODELS_PATH / "note_detection" / "yolov8s_e20.pt"
 
 ## Double-Tsek models
-DOUBLE_TSEK_CLASSIFIER_MODEL_PATH = MODELS_PATH / "double_tsek_classifier" / "double_tsek_classfier.keras"
+DOUBLE_TSEK_CLASSIFIER_MODEL_PATH = (
+    MODELS_PATH / "double_tsek_classifier" / "double_tsek_classfier.keras"
+)
 DOUBLE_TSEK_DETECTION_MODEL_PATH = MODELS_PATH / "double_tsek_detection" / "best.pt"
+
+# Status
+STATUS_PATH = Path(__file__).parent / "data" / "status"
+STATUS_PATH.mkdir(parents=True, exist_ok=True)
+OCRED_STATUS_PATH = STATUS_PATH / "ocr_status.txt"
+TRANSFORMED_STATUS_PATH = STATUS_PATH / "transformed_status.txt"

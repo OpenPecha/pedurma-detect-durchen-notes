@@ -17,6 +17,30 @@ from models import double_tsek_detector, note_detector
 vision_client = None
 
 
+def is_ocred(fn):
+    if not config.OCRED_STATUS_PATH.exists():
+        return False
+    return fn.name in config.OCRED_STATUS_PATH.read_text().split("\n")
+
+
+def log_ocred(fn):
+    fn.unlink()
+    with config.OCRED_STATUS_PATH.open("a") as f:
+        f.write(fn.name + "\n")
+
+
+def is_transformed(fn):
+    if not config.TRANSFORMED_STATUS_PATH.exists():
+        return False
+    return fn.name in config.TRANSFORMED_STATUS_PATH.read_text().split("\n")
+
+
+def log_transformed(fn):
+    fn.unlink()
+    with config.TRANSFORMED_STATUS_PATH.open("a") as f:
+        f.write(fn.name + "\n")
+
+
 def remove_old_maker(image, position):
     ih, iw, _ = image.shape
     x, y, w, h = position
@@ -100,9 +124,10 @@ def transform_volume(vol_path, output_dir):
             continue
         pbar.set_description("- " + vol_path.name)
         output_fn = output_dir / image_fn.name
-        if output_fn.is_file():
+        if is_transformed(image_fn):
             continue
         transform_image(image_fn, output_fn)
+        log_transformed(image_fn)
 
 
 def run_transform():
@@ -140,6 +165,7 @@ def google_ocr(image_fn, lang_hint=None):
 
 def ocr_volume(vol_path, output_dir):
     output_pages_dir = output_dir / "pages"
+    output_pages_dir.mkdir(parents=True, exist_ok=True)
     output_combined_fn = output_dir / f"{output_dir.name}.txt"
     combined_pages = ""
     for image_fn in (pbar := tqdm(list(vol_path.iterdir()))):
@@ -147,7 +173,7 @@ def ocr_volume(vol_path, output_dir):
             continue
         pbar.set_description("- " + vol_path.name)
         output_page_fn = output_pages_dir / f"{image_fn.stem}.txt"
-        if output_page_fn.is_file():
+        if is_ocred(image_fn):
             continue
         result = google_ocr(image_fn)
         try:
@@ -156,6 +182,7 @@ def ocr_volume(vol_path, output_dir):
             continue
         combined_pages += text + "\n\n"
         output_page_fn.write_text(text)
+        log_ocred(image_fn)
     output_combined_fn.write_text(combined_pages)
 
 
