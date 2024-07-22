@@ -1,6 +1,7 @@
 import io
 import json
 import sys
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import cv2
@@ -138,6 +139,7 @@ def run_transform():
         transform_volume(vol_path, output_dir)
 
 
+
 def google_ocr(image_fn, lang_hint=None):
     global vision_client
     if not vision_client:
@@ -162,37 +164,40 @@ def google_ocr(image_fn, lang_hint=None):
     response = json.loads(response_json)
     return response
 
+def process_image(image_fn, output_pages_dir, combined_pages, lang_hint=None):
+    if not image_fn.name.endswith(".jpg") or is_ocred(image_fn):
+        return
+    result = google_ocr(image_fn, lang_hint)
+    try:
+        text = result["textAnnotations"][0]["description"]
+    except KeyError:
+        return
+    combined_pages.append(text + "\n\n")
+    output_page_fn = output_pages_dir / f"{image_fn.stem}.txt"
+    output_page_fn.write_text(text)
+    log_ocred(image_fn)
 
-def ocr_volume(vol_path, output_dir):
+def ocr_volume(vol_path, output_dir, lang_hint=None):
     output_pages_dir = output_dir / "pages"
     output_pages_dir.mkdir(parents=True, exist_ok=True)
     output_combined_fn = output_dir / f"{output_dir.name}.txt"
-    combined_pages = ""
-    for image_fn in (pbar := tqdm(list(vol_path.iterdir()))):
-        if not image_fn.name.endswith(".jpg"):
-            continue
-        pbar.set_description("- " + vol_path.name)
-        output_page_fn = output_pages_dir / f"{image_fn.stem}.txt"
-        if is_ocred(image_fn):
-            continue
-        result = google_ocr(image_fn)
-        try:
-            text = result["textAnnotations"][0]["description"]
-        except:
-            continue
-        combined_pages += text + "\n\n"
-        output_page_fn.write_text(text)
-        log_ocred(image_fn)
-    output_combined_fn.write_text(combined_pages)
+    combined_pages = []
 
+    image_files = [image_fn for image_fn in vol_path.iterdir() if image_fn.name.endswith(".jpg")]
+    with ProcessPoolExecutor() as executor:
+        futures = [executor.submit(process_image, image_fn, output_pages_dir, combined_pages, lang_hint) for image_fn in image_files]
+        for future in tqdm(futures, desc=f"- {vol_path.name}"):
+            future.result()
+
+    combined_pages_text = "".join(combined_pages)
+    output_combined_fn.write_text(combined_pages_text)
 
 def run_ocr():
-    for vol_path in (pbar := tqdm(list(config.IMAGES_OUTPUT_PATH.iterdir()))):
-        pbar.set_description("OCR Progress")
-        output_dir = config.OCR_OUTPUT_PATH / vol_path.name
-        output_dir.mkdir(parents=True, exist_ok=True)
-        ocr_volume(vol_path, output_dir)
-
+    vol_paths = list(config.IMAGES_OUTPUT_PATH.iterdir())
+    with ProcessPoolExecutor() as executor:
+        futures = [executor.submit(ocr_volume, vol_path, config.OCR_OUTPUT_PATH / vol_path.name) for vol_path in vol_paths]
+        for future in tqdm(futures, desc="OCR Progress"):
+            future.result()
 
 if __name__ == "__main__":
     try:
