@@ -171,6 +171,12 @@ def process_image(image_fn, output_pages_dir, combined_pages, lang_hint=None):
     try:
         text = result["textAnnotations"][0]["description"]
     except KeyError:
+        text = ""
+    except IndexError:
+        text = ""
+    except Exception as e:
+        print(result)
+        print(e)
         return
     combined_pages.append(text + "\n\n")
     output_page_fn = output_pages_dir / f"{image_fn.stem}.txt"
@@ -184,7 +190,7 @@ def ocr_volume(vol_path, output_dir, lang_hint=None):
     combined_pages = []
 
     image_files = [image_fn for image_fn in vol_path.iterdir() if image_fn.name.endswith(".jpg")]
-    with ProcessPoolExecutor() as executor:
+    with ProcessPoolExecutor(max_workers=10) as executor:
         futures = [executor.submit(process_image, image_fn, output_pages_dir, combined_pages, lang_hint) for image_fn in image_files]
         for future in tqdm(futures, desc=f"- {vol_path.name}"):
             future.result()
@@ -193,11 +199,11 @@ def ocr_volume(vol_path, output_dir, lang_hint=None):
     output_combined_fn.write_text(combined_pages_text)
 
 def run_ocr():
-    vol_paths = list(config.IMAGES_OUTPUT_PATH.iterdir())
-    with ProcessPoolExecutor() as executor:
-        futures = [executor.submit(ocr_volume, vol_path, config.OCR_OUTPUT_PATH / vol_path.name) for vol_path in vol_paths]
-        for future in tqdm(futures, desc="OCR Progress"):
-            future.result()
+    for vol_path in (pbar := tqdm(list(config.IMAGES_OUTPUT_PATH.iterdir()))):
+        pbar.set_description("OCR Progress")
+        output_dir = config.OCR_OUTPUT_PATH / vol_path.name
+        output_dir.mkdir(parents=True, exist_ok=True)
+        ocr_volume(vol_path, output_dir)
 
 if __name__ == "__main__":
     try:
