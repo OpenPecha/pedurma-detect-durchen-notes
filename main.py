@@ -190,7 +190,7 @@ def ocr_volume(vol_path, output_dir, lang_hint=None):
     combined_pages = []
 
     image_files = [image_fn for image_fn in vol_path.iterdir() if image_fn.name.endswith(".jpg")]
-    with ProcessPoolExecutor(max_workers=10) as executor:
+    with ProcessPoolExecutor(max_workers=5) as executor:
         futures = [executor.submit(process_image, image_fn, output_pages_dir, combined_pages, lang_hint) for image_fn in image_files]
         for future in tqdm(futures, desc=f"- {vol_path.name}"):
             future.result()
