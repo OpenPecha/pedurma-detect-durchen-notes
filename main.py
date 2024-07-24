@@ -84,13 +84,16 @@ def alter_double_tseks(image, matches):
     return image
 
 
+
 def transform_image(
-    input_image_fn: Path, output_image_fn: Path, imshow=False, verbose=False
+    input_image_fn: Path,
+    output_image_fn: Path,
+    note_matches,
+    double_tsek_matches,
+    imshow=False,
+    verbose=False,
 ):
     image = cv2.imread(str(input_image_fn))
-
-    note_matches = list(note_detector.predict(input_image_fn))
-    double_tsek_matches = list(double_tsek_detector.predict(input_image_fn))
 
     if verbose:
         print("Image size:", image.shape)
@@ -118,17 +121,45 @@ def transform_image(
     cv2.imwrite(str(output_image_fn), image)
 
 
+def batch_transform_images(
+    input_image_fns: List[Path], output_path: Path, imshow=False, verbose=False
+):
+
+    batch_note_matches = list(note_detector.batch_predict(input_image_fns))
+    batch_double_tsek_matches = list(
+        double_tsek_detector.batch_predict(input_image_fns)
+    )
+
+    for input_image_fn, note_matches, double_tsek_matches in zip(
+        input_image_fns, batch_note_matches, batch_double_tsek_matches
+    ):
+        output_image_fn = output_path / input_image_fn.name
+        transform_image(
+            input_image_fn,
+            output_image_fn,
+            note_matches,
+            double_tsek_matches,
+            imshow,
+            verbose,
+        )
+
+
 def transform_volume(vol_path, output_dir):
     images_path = vol_path / "images"
-    for image_fn in (pbar := tqdm(list(images_path.iterdir()))):
-        if not image_fn.name.endswith(".jpg"):
-            continue
-        pbar.set_description("- " + vol_path.name)
-        output_fn = output_dir / image_fn.name
-        if is_transformed(image_fn):
-            continue
-        transform_image(image_fn, output_fn)
-        log_transformed(image_fn)
+    image_files = [
+        image_fn
+        for image_fn in images_path.glob("*.jpg")
+        if not is_transformed(image_fn)
+    ]
+    batch_size = 10
+
+    with tqdm(total=len(image_files), desc=f"- {vol_path.name}") as pbar:
+        for i in range(0, len(image_files), batch_size):
+            batch = image_files[i : i + batch_size]
+            batch_transform_images(batch, output_dir)
+            for image_fn in batch:
+                log_transformed(image_fn)
+            pbar.update(len(batch))
 
 
 def run_transform():
