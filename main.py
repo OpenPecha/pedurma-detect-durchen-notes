@@ -3,6 +3,7 @@ import json
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
+from typing import List
 
 import cv2
 import numpy as np
